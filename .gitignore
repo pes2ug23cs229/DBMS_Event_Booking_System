@@ -1,0 +1,27 @@
+# --- Environment and Dependencies ---
+# Ignore the virtual environment folder
+venv/
+env/
+.venv/
+
+# --- Compiled Files ---
+# Ignore Python compiled bytecode
+__pycache__/
+*.pyc
+
+# --- IDE and Operating System Files (e.g., VS Code, Windows/macOS) ---
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Log Files and Local Testing Data ---
+*.log
+*.sqlite
+/instance
+
+# --- SENSITIVE DATA (CRITICAL) ---
+# Do NOT commit files that contain passwords or local secrets.
+# Although you hardcoded DB_CONFIG in app.py for simplicity,
+# in a real project, you would ignore the file holding secrets.
+local_db_config.py
+.env

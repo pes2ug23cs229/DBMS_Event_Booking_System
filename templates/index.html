@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Multi Event Booking System</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f7f7f7; }
+        .tab-button.active {
+            border-bottom: 3px solid #6366f1; 
+            color: #4338ca; 
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="bg-white shadow-lg rounded-xl p-4 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Smart Event Management System</h1>
+            <p class="text-sm text-gray-500 mt-1">Connectivity & Analytics Dashboard (User ID: {{ current_user_id }})</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="bg-white shadow-lg rounded-xl mb-6">
+            <nav class="flex border-b border-gray-200">
+                <button class="tab-button p-4 text-gray-600 hover:text-indigo-700 transition duration-150 active" data-tab="admin">
+                    <i data-lucide="calendar-check" class="w-5 h-5 inline mr-1"></i> Admin Panel
+                </button>
+                <button class="tab-button p-4 text-gray-600 hover:text-indigo-700 transition duration-150" data-tab="booking">
+                    <i data-lucide="ticket" class="w-5 h-5 inline mr-1"></i> Booking
+                </button>
+                <button class="tab-button p-4 text-gray-600 hover:text-indigo-700 transition duration-150" data-tab="reservations">
+                    <i data-lucide="user-check" class="w-5 h-5 inline mr-1"></i> My Reservations
+                </button>
+                <button class="tab-button p-4 text-gray-600 hover:text-indigo-700 transition duration-150" data-tab="notifications">
+                    <i data-lucide="bell" class="w-5 h-5 inline mr-1"></i> Notifications
+                </button>
+                <button class="tab-button p-4 text-gray-600 hover:text-indigo-700 transition duration-150" data-tab="analytics">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5 inline mr-1"></i> Analytics
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="bg-white shadow-lg rounded-xl p-6">
+            
+            <!-- ----------------------------------------------------- -->
+            <!-- ADMIN PANEL TAB -->
+            <!-- ----------------------------------------------------- -->
+            <div id="admin" class="tab-content active">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Event Management</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Event Creation/Update Form -->
+                    <div class="lg:col-span-1 p-5 bg-gray-50 rounded-lg shadow-inner h-fit">
+                        <h3 class="text-xl font-medium text-indigo-700 mb-4">Add / Edit Event</h3>
+                        <form id="eventForm" action="{{ url_for('save_event') }}" method="POST" class="space-y-4">
+                            <input type="hidden" name="event_id" id="event_id">
+                            
+                            <div>
+                                <label for="event_name" class="block text-sm font-medium text-gray-700">Event Name</label>
+                                <input type="text" name="event_name" id="event_name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="event_date" class="block text-sm font-medium text-gray-700">Date</label>
+                                    <input type="date" name="event_date" id="event_date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                                </div>
+                                <div>
+                                    <label for="event_time" class="block text-sm font-medium text-gray-700">Time</label>
+                                    <input type="time" name="event_time" id="event_time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="price" class="block text-sm font-medium text-gray-700">Price (INR)</label>
+                                <input type="number" name="price" id="price" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            </div>
+
+                            <!-- Dropdown 1: Category -->
+                            <div>
+                                <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+                                <select name="category" id="category" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white">
+                                    <option value="">-- Select Category --</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Dropdown 2: Organizer (Foreign Key) -->
+                            <div>
+                                <label for="organizer_id" class="block text-sm font-medium text-gray-700">Organizer</label>
+                                <select name="organizer_id" id="organizer_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white">
+                                    <option value="">-- Select Organizer --</option>
+                                    {% for org in organizers %}
+                                    <option value="{{ org.organizer_id }}">{{ org.organization_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Dropdown 3: Venue (Foreign Key) -->
+                            <div>
+                                <label for="venue_id" class="block text-sm font-medium text-gray-700">Venue</label>
+                                <select name="venue_id" id="venue_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white">
+                                    <option value="">-- Select Venue --</option>
+                                    {% for venue in venues %}
+                                    <option value="{{ venue.venue_id }}">{{ venue.venue_name }} (Capacity: {{ venue.capacity }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit" id="submitBtn" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150">
+                                Add Event
+                            </button>
+                            <button type="button" id="resetBtn" class="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150">
+                                Clear Form
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Event List (Read Operations) -->
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-medium text-gray-700 mb-4">Current Events List</h3>
+                        <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-indigo-50">
+                                    <tr>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name / Category</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date / Time</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price (INR)</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organizer / Venue</th>
+                                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="eventsListBody">
+                                    {% for event in events %}
+                                    <tr data-event-id="{{ event.event_id }}">
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ event.event_id }}</td>
+                                        <td class="px-3 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ event.event_name }}</div>
+                                            <div class="text-xs text-indigo-600">{{ event.category }}</div>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ event.event_date }}</div>
+                                            <div class="text-xs text-gray-500">{{ event.event_time }}</div>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">₹ {{ event.price | int }}</td>
+                                        <td class="px-3 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ event.organization_name }}</div>
+                                            <div class="text-xs text-gray-500">{{ event.venue_name }}</div>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            <button onclick="editEvent(this)"
+                                                data-id="{{ event.event_id }}"
+                                                data-name="{{ event.event_name }}"
+                                                data-date="{{ event.event_date }}"
+                                                data-time="{{ event.event_time }}"
+                                                data-price="{{ event.price }}"
+                                                data-category="{{ event.category }}"
+                                                data-organizer-id="{{ event.organizer_id }}"
+                                                data-venue-id="{{ event.venue_id }}"
+                                                class="text-indigo-600 hover:text-indigo-900 mr-2" title="Edit">
+                                                <i data-lucide="square-pen" class="w-4 h-4 inline"></i>
+                                            </button>
+                                            <form action="{{ url_for('delete_event', event_id=event.event_id) }}" method="POST" onsubmit="return confirmDelete(event)" class="inline">
+                                                <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
+                                                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ----------------------------------------------------- -->
+            <!-- BOOKING TAB -->
+            <!-- ----------------------------------------------------- -->
+            <div id="booking" class="tab-content">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-6">Book an Event</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {% for event in events %}
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-lg border border-gray-200 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-indigo-700 mb-2">{{ event.event_name }}</h3>
+                            <p class="text-sm text-gray-600 mb-1">
+                                <i data-lucide="calendar" class="w-4 h-4 inline mr-1 text-gray-500"></i>
+                                {{ event.event_date }} @ {{ event.event_time }}
+                            </p>
+                            <p class="text-sm text-gray-600 mb-1">
+                                <i data-lucide="map-pin" class="w-4 h-4 inline mr-1 text-gray-500"></i>
+                                {{ event.venue_name }} (Cap: {{ event.capacity }})
+                            </p>
+                            <p class="text-lg font-semibold text-green-600 my-3">
+                                Price: ₹ {{ event.price | int }}
+                            </p>
+                            <p class="text-xs text-gray-400 mb-3">Organized by: {{ event.organization_name }}</p>
+                        </div>
+                        
+                        <form onsubmit="bookEvent(event, this)" class="space-y-3">
+                            <input type="hidden" name="event_id" value="{{ event.event_id }}">
+                            <div class="grid grid-cols-2 gap-3">
+                                <!-- Dropdown: Ticket Category -->
+                                <div>
+                                    <label for="ticket_category_{{ event.event_id }}" class="block text-xs font-medium text-gray-700">Ticket Type</label>
+                                    <select name="ticket_category" id="ticket_category_{{ event.event_id }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white text-sm">
+                                        <option value="">-- Select --</option>
+                                        {% for t_cat in ticket_categories %}
+                                        <option value="{{ t_cat }}">{{ t_cat }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <!-- Input: No of Tickets -->
+                                <div>
+                                    <label for="no_of_tickets_{{ event.event_id }}" class="block text-xs font-medium text-gray-700">Tickets</label>
+                                    <input type="number" name="no_of_tickets" id="no_of_tickets_{{ event.event_id }}" min="1" max="10" value="1" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-sm">
+                                </div>
+                            </div>
+                            
+                            <!-- Dropdown: Payment Method -->
+                            <div>
+                                <label for="payment_method_{{ event.event_id }}" class="block text-xs font-medium text-gray-700">Payment Method</label>
+                                <select name="payment_method" id="payment_method_{{ event.event_id }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white text-sm">
+                                    <option value="">-- Select Method --</option>
+                                    {% for p_method in payment_methods %}
+                                    <option value="{{ p_method }}">{{ p_method }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition duration-150">
+                                Book Now
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ----------------------------------------------------- -->
+            <!-- MY RESERVATIONS TAB -->
+            <!-- ----------------------------------------------------- -->
+            <div id="reservations" class="tab-content">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">My Bookings (User ID: {{ current_user_id }})</h2>
+                <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-indigo-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reservation ID</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tickets</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for res in reservations %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.reservation_id }}</td>
+                                <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">{{ res.event_name }}</td>
+                                <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.no_of_tickets }}</td>
+                                <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.booking_date }}</td>
+                                <td class="px-3 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if res.status == 'Confirmed' %} bg-green-100 text-green-800
+                                        {% elif res.status == 'Cancelled' %} bg-red-100 text-red-800
+                                        {% else %} bg-yellow-100 text-yellow-800 {% endif %}">
+                                        {{ res.status }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
+                                    {% if res.status == 'Confirmed' %}
+                                        <button onclick="cancelReservation({{ res.reservation_id }})" class="py-1 px-3 text-sm rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 transition duration-150">
+                                            Cancel
+                                        </button>
+                                        <button onclick="processRefund({{ res.reservation_id }})" class="py-1 px-3 text-sm rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 transition duration-150">
+                                            Refund
+                                        </button>
+                                    {% elif res.status == 'Pending' %}
+                                        <span class="text-gray-500 text-xs">Awaiting Payment/Confirmation</span>
+                                    {% else %}
+                                        <span class="text-gray-500 text-xs">Closed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-gray-500">No reservations found for User ID {{ current_user_id }}.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ----------------------------------------------------- -->
+            <!-- NOTIFICATIONS TAB -->
+            <!-- ----------------------------------------------------- -->
+            <div id="notifications" class="tab-content">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Your System Alerts</h2>
+                <div class="space-y-4">
+                    {% for notif in notifications %}
+                    <div class="p-4 rounded-lg shadow-md flex items-center 
+                        {% if notif.notification_type == 'Alert' %} bg-red-50 border-l-4 border-red-500
+                        {% elif notif.notification_type == 'Reminder' %} bg-yellow-50 border-l-4 border-yellow-500
+                        {% elif notif.notification_type == 'ReservationUpdate' %} bg-green-50 border-l-4 border-green-500
+                        {% else %} bg-indigo-50 border-l-4 border-indigo-500 {% endif %}">
+                        <div class="flex-shrink-0 mr-3">
+                            <i data-lucide="info" class="w-6 h-6 
+                                {% if notif.notification_type == 'Alert' %} text-red-600
+                                {% elif notif.notification_type == 'Reminder' %} text-yellow-600
+                                {% elif notif.notification_type == 'ReservationUpdate' %} text-green-600
+                                {% else %} text-indigo-600 {% endif %}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">{{ notif.message }}</p>
+                            <p class="text-xs text-gray-500 mt-1">Type: {{ notif.notification_type }} | Sent: {{ notif.sent_date }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-6 text-center text-gray-500 bg-gray-50 rounded-lg">No new notifications.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+
+            <!-- ----------------------------------------------------- -->
+            <!-- ANALYTICS TAB -->
+            <!-- ----------------------------------------------------- -->
+            <div id="analytics" class="tab-content">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-6">Reservation Management Analytics</h2>
+
+                <!-- KPIs (Key Performance Indicators) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- KPI 1: Total Revenue (Uses fn_total_revenue) -->
+                    <div class="bg-indigo-100 p-5 rounded-lg shadow-md">
+                        <p class="text-sm font-medium text-indigo-700">Total System Revenue</p>
+                        <p class="text-3xl font-bold text-indigo-900 mt-1">₹ {{ analytics.total_revenue }}</p>
+                        
+                    </div>
+                    <!-- KPI 2: Average Ticket Price (Uses fn_avg_ticket_price) -->
+                    <div class="bg-teal-100 p-5 rounded-lg shadow-md">
+                        <p class="text-sm font-medium text-teal-700">Average Event Price</p>
+                        <p class="text-3xl font-bold text-teal-900 mt-1">₹ {{ analytics.avg_price }}</p>
+                        
+                    </div>
+                    <!-- KPI 3: Placeholder for Total Reservations -->
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-md">
+                        <p class="text-sm font-medium text-gray-700">Total Events Hosted</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ events | length }}</p>
+                        
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- Report 1: Popular Events Report (Uses sp_popular_events) -->
+                    <div class="bg-white p-5 rounded-lg shadow-md border">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-green-500"></i> Top Popular Events 
+                        </h3>
+                        
+                        <ol class="list-decimal list-inside space-y-2">
+                            {% for event in analytics.popular_events %}
+                            <li class="p-2 border-b last:border-b-0">
+                                <span class="font-medium text-gray-900">{{ event.event_name }}</span> 
+                                <span class="text-green-600 text-sm ml-2">({{ event.total_reservations }} Bookings)</span>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                    
+                    <!-- Report 2: Most Popular Venue Report (Uses sp_most_popular_venue) -->
+                    <div class="bg-white p-5 rounded-lg shadow-md border">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <i data-lucide="map" class="w-5 h-5 mr-2 text-indigo-500"></i> Most Popular Venues
+                        </h3>
+                        
+                        <ol class="list-decimal list-inside space-y-2">
+                            {% for venue in analytics.popular_venues %}
+                            <li class="p-2 border-b last:border-b-0">
+                                <span class="font-medium text-gray-900">{{ venue.venue_name }}</span>
+                                
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+
+                    <!-- Report 3: Event Revenue Breakdown (Uses vw_event_revenue) -->
+                    <div class="bg-white p-5 rounded-lg shadow-md border lg:col-span-2">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <i data-lucide="dollar-sign" class="w-5 h-5 mr-2 text-yellow-600"></i> Event Revenue Report
+                        </h3>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-yellow-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Revenue (INR)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for item in analytics.event_revenue_report %}
+                                    <tr class="hover:bg-gray-50">
+                                        <!-- CRITICAL FIX: Changed | int to | float to resolve Jinja crash -->
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.event_name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right text-green-700">₹ {{ "{:,.2f}".format(item.total_revenue | float) }}
+</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Report 4: Quality Metrics (Ratings) -->
+                    <div class="bg-white p-5 rounded-lg shadow-md border">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <i data-lucide="star" class="w-5 h-5 mr-2 text-purple-500"></i> Event Rating Breakdown
+                        </h3>
+                        
+                        <ul class="space-y-2">
+                            {% for item in analytics.ratings_report %}
+                            <li class="p-2 border-b last:border-b-0">
+                                <span class="font-medium text-gray-900">{{ item.event_name }}</span> 
+                                <span class="text-purple-600 text-sm font-bold">{{ item.avg_rating }} / 5.00</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Report 5: High Cancellation Events (Uses sp_high_cancellation_events) -->
+                    <div class="bg-white p-5 rounded-lg shadow-md border">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 mr-2 text-red-500"></i> High Cancellation Risk
+                        </h3>
+                        
+                        <ul class="list-disc list-inside space-y-2">
+                            {% for event in analytics.cancellation_report %}
+                            <li class="p-2 border-b last:border-b-0 text-red-700">
+                                <span class="font-medium">{{ event.event_name }}</span> 
+                                                            </li>
+                            {% endfor %}
+                            {% if not analytics.cancellation_report %}
+                            <li class="p-2 text-gray-500">No events currently flagged.</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- END ANALYTICS TAB -->
+            
+        </div>
+    </div>
+    
+    <!-- Modals and JavaScript -->
+    <div id="statusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+            <h3 id="modalTitle" class="text-xl font-bold mb-3"></h3>
+            <p id="modalMessage" class="text-gray-700 mb-4"></p>
+            <button onclick="closeModal()" class="py-2 px-4 rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // -----------------------------------------------------
+        // ICON INITIALIZATION FIX
+        // -----------------------------------------------------
+        window.onload = function() {
+            // This ensures lucide.createIcons() runs ONLY after the lucide script
+            // and the rest of the DOM are fully loaded, preventing ReferenceError.
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+
+        // -----------------------------------------------------
+        // TAB SWITCHING LOGIC
+        // -----------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            function switchTab(targetId) {
+                tabs.forEach(tab => {
+                    tab.classList.remove('active');
+                    if (tab.getAttribute('data-tab') === targetId) {
+                        tab.classList.add('active');
+                    }
+                });
+                
+                contents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                        // Re-render icons for new tab content
+                        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                            lucide.createIcons();
+                        }
+                    }
+                });
+            }
+
+            // Set initial tab based on URL hash or default to 'admin'
+            const initialTab = window.location.hash ? window.location.hash.substring(1) : 'admin';
+            switchTab(initialTab);
+
+            tabs.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetId = e.target.closest('button').getAttribute('data-tab');
+                    switchTab(targetId);
+                    window.location.hash = targetId;
+                });
+            });
+        });
+
+        // -----------------------------------------------------
+        // MODAL LOGIC
+        // -----------------------------------------------------
+        const statusModal = document.getElementById('statusModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+
+        function showModal(title, message, isSuccess = true) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            if (isSuccess) {
+                modalTitle.classList.remove('text-red-600');
+                modalTitle.classList.add('text-green-600');
+            } else {
+                modalTitle.classList.remove('text-green-600');
+                modalTitle.classList.add('text-red-600');
+            }
+            statusModal.classList.remove('hidden');
+            statusModal.classList.add('flex');
+        }
+
+        function closeModal() {
+            statusModal.classList.add('hidden');
+            statusModal.classList.remove('flex');
+            // Force a page reload to show updated lists
+            window.location.reload(); 
+        }
+
+        // -----------------------------------------------------
+        // ADMIN CRUD LOGIC
+        // -----------------------------------------------------
+        
+        // Populate form for editing an event
+        function editEvent(button) {
+            const form = document.getElementById('eventForm');
+            const data = button.dataset;
+
+            form.querySelector('#event_id').value = data.id;
+            form.querySelector('#event_name').value = data.name;
+            form.querySelector('#event_date').value = data.date;
+            form.querySelector('#event_time').value = data.time;
+            form.querySelector('#price').value = parseFloat(data.price).toFixed(2);
+            form.querySelector('#category').value = data.category;
+            form.querySelector('#organizer_id').value = data.organizerId;
+            form.querySelector('#venue_id').value = data.venueId;
+            
+            form.querySelector('#submitBtn').textContent = 'Update Event';
+            form.action = '{{ url_for("save_event") }}';
+            document.querySelector('#admin h3').textContent = `Edit Event #${data.id}`;
+            document.querySelector('#admin').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reset form to Add mode
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            const form = document.getElementById('eventForm');
+            form.reset();
+            form.querySelector('#event_id').value = '';
+            form.querySelector('#submitBtn').textContent = 'Add Event';
+            form.action = '{{ url_for("save_event") }}';
+            document.querySelector('#admin h3').textContent = `Add / Edit Event`;
+        });
+
+        function confirmDelete(e) {
+            if (!confirm('Are you sure you want to delete this event?')) {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        }
+
+        // -----------------------------------------------------
+        // USER TRANSACTION LOGIC (BOOKING, CANCEL, REFUND)
+        // -----------------------------------------------------
+
+        // BOOK EVENT
+        async function bookEvent(e, form) {
+            e.preventDefault();
+            
+            // 1. Convert form data to a JSON object
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => { data[key] = value });
+            
+            // NOTE: The server (app.py) expects a JSON object for atomic transactions
+            
+            try {
+                const response = await fetch('/book_event', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(data) 
+                });
+                
+                const result = await response.json();
+
+                if (response.ok) {
+                    showModal('Success!', result.message, true);
+                } else {
+                    showModal('Booking Failed', result.message || 'An unknown error occurred.', false);
+                }
+            } catch (error) {
+                showModal('System Error', 'Could not connect to the server.', false);
+            }
+        }
+
+        // CANCEL RESERVATION
+        async function cancelReservation(reservationId) {
+            // 1. Prompt user for the required reason argument
+            const reason = prompt(`Reason for cancelling Reservation #${reservationId}:`);
+
+            if (reason === null || reason.trim() === '') {
+                showModal('Cancellation Aborted', 'Cancellation requires a reason. Please try again.', false);
+                return;
+            }
+
+            if (!confirm(`Confirm cancellation of Reservation #${reservationId}?`)) {
+                return;
+            }
+
+            try {
+                // Data object now includes both arguments expected by the SP
+                const dataToSend = {
+                    reservation_id: reservationId,
+                    cancellation_reason: reason.trim()
+                };
+
+                const response = await fetch(`/cancel_reservation/${reservationId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend)
+                });
+                
+                const result = await response.json();
+
+                if (response.ok) {
+                    showModal('Cancellation Success', result.message, true);
+                } else {
+                    showModal('Cancellation Failed', result.message || 'An error occurred during cancellation.', false);
+                }
+            } catch (error) {
+                showModal('System Error', 'Could not connect to the server for cancellation.', false);
+            }
+        }
+        
+        // PROCESS REFUND
+        async function processRefund(reservationId) {
+            if (!confirm(`Are you sure you want to request a refund for Reservation #${reservationId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/process_refund/${reservationId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                
+                const result = await response.json();
+
+                if (response.ok) {
+                    showModal('Refund Requested', result.message, true);
+                } else {
+                    showModal('Refund Failed', result.message || 'An error occurred during refund processing.', false);
+                }
+            } catch (error) {
+                showModal('System Error', 'Could not connect to the server for refund request.', false);
+            }
+        }
+
+    </script>
+</body>
+</html>
